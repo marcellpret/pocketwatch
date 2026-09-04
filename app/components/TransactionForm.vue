@@ -49,19 +49,24 @@
           <ChevronsUpDown class="h-4 w-4 text-muted-foreground" />
         </RekaSelectTrigger>
         <RekaSelectPortal>
-          <RekaSelectContent class="z-50 rounded-xl border border-border bg-card p-1 shadow-lg">
-            <RekaSelectItem
-              v-for="cat in filteredCategories"
-              :key="cat.id"
-              :value="cat.id"
-              class="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground outline-none hover:bg-muted"
-            >
-              <RekaSelectItemIndicator>
-                <Check class="h-4 w-4 text-brand-600" />
-              </RekaSelectItemIndicator>
-              <span class="h-3 w-3 rounded-full" :style="{ backgroundColor: cat.color || '#9ca3af' }" />
-              <RekaSelectItemText>{{ cat.name }}</RekaSelectItemText>
-            </RekaSelectItem>
+          <RekaSelectContent
+            position="popper"
+            class="z-50 rounded-xl border border-border bg-card shadow-lg"
+          >
+            <RekaSelectViewport class="max-h-[min(16rem,60dvh)] overflow-y-auto p-1">
+              <RekaSelectItem
+                v-for="cat in filteredCategories"
+                :key="cat.id"
+                :value="cat.id"
+                class="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground outline-none hover:bg-muted"
+              >
+                <RekaSelectItemIndicator>
+                  <Check class="h-4 w-4 text-brand-600" />
+                </RekaSelectItemIndicator>
+                <span class="h-3 w-3 rounded-full" :style="{ backgroundColor: cat.color || '#9ca3af' }" />
+                <RekaSelectItemText>{{ cat.name }}</RekaSelectItemText>
+              </RekaSelectItem>
+            </RekaSelectViewport>
           </RekaSelectContent>
         </RekaSelectPortal>
       </RekaSelect>
@@ -154,6 +159,7 @@ import {
   SelectValue as RekaSelectValue,
   SelectPortal as RekaSelectPortal,
   SelectContent as RekaSelectContent,
+  SelectViewport as RekaSelectViewport,
   SelectItem as RekaSelectItem,
   SelectItemText as RekaSelectItemText,
   SelectItemIndicator as RekaSelectItemIndicator,
@@ -171,7 +177,7 @@ const emit = defineEmits<{
 }>()
 
 const supabase = useSupabase()
-const { household } = useHousehold()
+const { workspace } = useWorkspace()
 const { user } = useAuth()
 
 const isEditing = computed(() => !!props.transaction)
@@ -224,8 +230,8 @@ async function save() {
     error.value = 'Please choose a category.'
     return
   }
-  if (!household.value) {
-    error.value = 'No household found.'
+  if (!workspace.value) {
+    error.value = 'No workspace selected.'
     return
   }
   if (!user.value) {
@@ -251,7 +257,7 @@ async function save() {
   } else {
     const { error: err } = await supabase.from('transactions').insert({
       ...payload,
-      household_id: household.value.id,
+      workspace_id: workspace.value.id,
       user_id: user.value.id,
     })
     if (err) error.value = err.message

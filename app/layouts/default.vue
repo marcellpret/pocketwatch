@@ -4,12 +4,14 @@
       class="sticky top-0 z-20 border-b border-border bg-card/80 backdrop-blur"
     >
       <div class="mx-auto flex h-14 w-full max-w-md items-center justify-between px-4">
-        <button class="flex items-center gap-2" @click="navigateTo('/')">
-          <span class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-white">
-            <span class="text-base">🕰️</span>
-          </span>
-          <span class="text-lg font-semibold">Pocketwatch</span>
-        </button>
+        <div class="flex min-w-0 items-center gap-2">
+          <button class="flex shrink-0 items-center" @click="navigateTo('/')">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-white">
+              <span class="text-base">🕰️</span>
+            </span>
+          </button>
+          <WorkspaceSwitcher />
+        </div>
         <button
           type="button"
           aria-label="Toggle theme"
@@ -51,6 +53,7 @@ import { Moon, Sun } from 'lucide-vue-next'
 
 const route = useRoute()
 const { toggleTheme, isDark } = useTheme()
+const { loadWorkspaces } = useWorkspace()
 
 const navItems = [
   { label: 'Home', to: '/', icon: Home },
@@ -58,4 +61,8 @@ const navItems = [
   { label: 'Add', to: '/add', icon: PlusCircle },
   { label: 'More', to: '/settings', icon: Settings },
 ]
+
+onMounted(() => {
+  loadWorkspaces()
+})
 </script>

@@ -4,18 +4,44 @@
     <div class="h-24 animate-pulse rounded-2xl bg-muted" />
   </div>
 
-  <div v-else-if="!household" class="flex flex-col items-center gap-4 pt-10 text-center">
-    <span class="text-5xl">🏠</span>
-    <h2 class="text-xl font-semibold">Welcome to Pocketwatch!</h2>
-    <p class="max-w-xs text-sm text-muted-foreground">
-      You don't have a family household yet. Create one, or join your partner's with their code.
-    </p>
-    <button
-      class="mt-2 rounded-xl bg-brand-600 px-6 py-3 font-semibold text-white transition hover:bg-brand-700"
-      @click="navigateTo('/settings')"
-    >
-      Set up household
-    </button>
+  <div v-else-if="!workspace" class="flex flex-col items-center gap-4 pt-10 text-center">
+    <div v-if="pendingInvite" class="w-full max-w-xs space-y-3 text-left">
+      <div class="rounded-2xl border border-border bg-card p-5">
+        <h2 class="mb-2 text-lg font-semibold">Invitation</h2>
+        <p class="mb-4 text-sm text-muted-foreground">
+          <strong>{{ pendingInvite.email.replace(/^(.*)@.*$/, '$1') }}</strong> invited you to join a
+          workspace.
+        </p>
+        <div class="flex gap-2">
+          <button
+            class="flex-1 rounded-xl bg-brand-600 py-2.5 font-semibold text-white transition hover:bg-brand-700"
+            @click="acceptInvite(pendingInvite)"
+          >
+            Accept
+          </button>
+          <button
+            class="flex-1 rounded-xl border border-border bg-background py-2.5 font-semibold text-muted-foreground transition hover:bg-muted"
+            @click="declineInvite(pendingInvite)"
+          >
+            Decline
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <template v-else>
+      <span class="text-5xl">🕰️</span>
+      <h2 class="text-xl font-semibold">Welcome to Pocketwatch!</h2>
+      <p class="max-w-xs text-sm text-muted-foreground">
+        You don't have a workspace yet. Create one, or join someone's workspace with their code.
+      </p>
+      <button
+        class="mt-2 rounded-xl bg-brand-600 px-6 py-3 font-semibold text-white transition hover:bg-brand-700"
+        @click="navigateTo('/settings')"
+      >
+        Create workspace
+      </button>
+    </template>
   </div>
 
   <div v-else class="space-y-5">
@@ -104,7 +130,8 @@ type TransactionRow = Database['public']['Tables']['transactions']['Row']
 type CategoryRow = Database['public']['Tables']['categories']['Row']
 
 const supabase = useSupabase()
-const { household, categories, loadHousehold, loadCategories } = useHousehold()
+const { workspace, categories, loadWorkspaces, loadCategories } = useWorkspace()
+const { myPendingInvites, loadMyPendingInvites, accept, decline } = useInvitations()
 
 const loading = ref(true)
 const transactions = ref<TransactionRow[]>([])
@@ -146,21 +173,37 @@ function shiftMonth(delta: number) {
   currentMonth.value = monthKey(new Date(y, m - 1 + delta, 1))
 }
 
+async function acceptInvite(invite: (typeof myPendingInvites.value)[number]) {
+  await accept(invite)
+  if (workspace.value) {
+    await loadCategories()
+    await loadTransactions()
+  }
+}
+
+async function declineInvite(invite: (typeof myPendingInvites.value)[number]) {
+  await decline(invite)
+}
+
+const pendingInvite = computed(() => myPendingInvites.value[0] ?? null)
+
 async function loadTransactions() {
-  if (!household.value) return
+  if (!workspace.value) return
   const { data } = await supabase
     .from('transactions')
     .select('*')
-    .eq('household_id', household.value.id)
+    .eq('workspace_id', workspace.value.id)
   transactions.value = data ?? []
 }
 
 onMounted(async () => {
   loading.value = true
-  await loadHousehold()
-  if (household.value) {
+  await loadWorkspaces()
+  if (workspace.value) {
     await loadCategories()
     await loadTransactions()
+  } else {
+    await loadMyPendingInvites()
   }
   loading.value = false
 })

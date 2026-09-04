@@ -23,13 +23,12 @@
 </template>
 
 <script setup lang="ts">
-import { useHousehold } from '~/composables/useHousehold'
 import type { TransactionRow } from '~/types/transactions'
 
 const route = useRoute()
 const supabase = useSupabase()
 
-const { household, categories, loadHousehold, loadCategories } = useHousehold()
+const { workspace, categories, loadWorkspaces, loadCategories } = useWorkspace()
 
 const editingTransaction = ref<TransactionRow | null>(null)
 const loading = ref(true)
@@ -38,8 +37,8 @@ const isEditing = computed(() => !!route.query.edit)
 
 onMounted(async () => {
   loading.value = true
-  await loadHousehold()
-  if (household.value) {
+  await loadWorkspaces()
+  if (workspace.value) {
     await loadCategories()
     const id = route.query.edit as string | undefined
     if (id) {

@@ -1,7 +1,7 @@
 <template>
   <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
     <h2 class="mb-1 text-xl font-semibold">Welcome back</h2>
-    <p class="mb-6 text-sm text-muted-foreground">Sign in to your family finances.</p>
+    <p class="mb-6 text-sm text-muted-foreground">Sign in to your finances.</p>
 
     <form class="space-y-4" @submit.prevent="onSubmit">
       <div>

@@ -7,37 +7,35 @@
       >
         <div class="mb-5 flex items-center justify-between">
           <RekaDialogTitle class="text-lg font-semibold">
-            {{ isEditing ? 'Edit category' : 'New category' }}
+            {{ isEdit ? 'Edit workspace' : 'New workspace' }}
           </RekaDialogTitle>
           <RekaDialogClose class="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted">
             <X class="h-5 w-5" />
           </RekaDialogClose>
         </div>
 
-        <div class="space-y-4">
+        <form class="space-y-4" @submit.prevent="save">
           <div>
             <label class="mb-1.5 block text-sm font-medium">Name</label>
             <input
               v-model="name"
               type="text"
-              placeholder="e.g. Rent"
+              required
+              placeholder="e.g. Family budget, Project X, Trip"
               class="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-foreground outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30"
             />
           </div>
 
           <div>
-            <label class="mb-1.5 block text-sm font-medium">Colour</label>
-            <div class="flex flex-wrap gap-2">
-              <button
-                v-for="c in colors"
-                :key="c"
-                type="button"
-                class="h-8 w-8 rounded-full transition ring-offset-2 ring-offset-card"
-                :style="{ backgroundColor: c }"
-                :class="selectedColor === c ? 'ring-2 ring-foreground' : 'hover:scale-110'"
-                @click="selectedColor = c"
-              />
-            </div>
+            <label class="mb-1.5 block text-sm font-medium">
+              Description <span class="text-muted-foreground">(optional)</span>
+            </label>
+            <textarea
+              v-model="description"
+              rows="3"
+              placeholder="What is this workspace for?"
+              class="w-full resize-none rounded-xl border border-border bg-background px-4 py-2.5 text-foreground outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30"
+            />
           </div>
 
           <p v-if="error" class="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-400">
@@ -46,20 +44,21 @@
 
           <div class="flex gap-3 pt-1">
             <button
+              type="button"
               class="flex-1 rounded-xl border border-border py-3 font-semibold text-muted-foreground transition hover:bg-muted"
               @click="emit('update:open', false)"
             >
               Cancel
             </button>
             <button
+              type="submit"
               :disabled="saving"
               class="flex-1 rounded-xl bg-brand-600 py-3 font-semibold text-white transition hover:bg-brand-700 disabled:opacity-60"
-              @click="save"
             >
-              {{ saving ? 'Saving…' : 'Save' }}
+              {{ saving ? 'Saving…' : isEdit ? 'Save changes' : 'Create workspace' }}
             </button>
           </div>
-        </div>
+        </form>
       </RekaDialogContent>
     </RekaDialogPortal>
   </RekaDialogRoot>
@@ -77,43 +76,38 @@ import {
 } from 'reka-ui'
 import type { Database } from '~/types/database'
 
-type CategoryRow = Database['public']['Tables']['categories']['Row']
+type WorkspaceRow = Database['public']['Tables']['workspaces']['Row']
 
 const props = defineProps<{
   open: boolean
-  category: CategoryRow | 'new' | null
-  type: 'expense' | 'income'
+  mode: 'create' | 'edit'
+  workspace?: WorkspaceRow | null
 }>()
 
 const emit = defineEmits<{ 'update:open': [v: boolean]; saved: [] }>()
 
-const supabase = useSupabase()
-const { workspace, loadCategories } = useWorkspace()
+const { workspace: currentWorkspace, createWorkspace, updateWorkspace } = useWorkspace()
 
 const name = ref('')
-const selectedColor = ref('#6366f1')
+const description = ref('')
 const saving = ref(false)
 const error = ref<string | null>(null)
 
-const colors = [
-  '#6366f1', '#ec4899', '#f59e0b', '#10b981',
-  '#3b82f6', '#ef4444', '#8b5cf6', '#14b8a6',
-  '#f97316', '#84cc16',
-]
+const isEdit = computed(() => props.mode === 'edit')
 
-const isEditing = computed(() => props.category !== 'new' && props.category !== null)
+const editTarget = computed(() => (isEdit.value ? props.workspace ?? null : null))
 
 watch(
   () => props.open,
   (open) => {
     if (!open) return
     error.value = null
-    if (props.category === 'new') {
+    if (editTarget.value) {
+      name.value = editTarget.value.name
+      description.value = editTarget.value.description ?? ''
+    } else {
       name.value = ''
-      selectedColor.value = colors[0]!
-    } else if (props.category) {
-      name.value = props.category.name
-      selectedColor.value = props.category.color || colors[0]!
+      description.value = ''
     }
   },
 )
@@ -125,40 +119,31 @@ async function save() {
     error.value = 'Please enter a name.'
     return
   }
-  if (!workspace.value) {
-    error.value = 'No workspace selected.'
-    return
-  }
 
   saving.value = true
 
-  if (isEditing.value && props.category && props.category !== 'new') {
-    const { error: err } = await supabase
-      .from('categories')
-      .update({ name: trimmed, color: selectedColor.value })
-      .eq('id', props.category.id)
-    if (err) error.value = err.message
-    else {
-      emit('saved')
-      emit('update:open', false)
+  if (isEdit.value && editTarget.value) {
+    const { error: err } = await updateWorkspace({
+      id: editTarget.value.id,
+      name: trimmed,
+      description: description.value,
+    })
+    if (err) {
+      error.value = err.message
+      saving.value = false
+      return
     }
   } else {
-    const { error: err } = await supabase
-      .from('categories')
-      .insert({
-        workspace_id: workspace.value.id,
-        name: trimmed,
-        type: props.type,
-        color: selectedColor.value,
-      })
-    if (err) error.value = err.message
-    else {
-      emit('saved')
-      emit('update:open', false)
+    const { error: err } = await createWorkspace({ name: trimmed, description: description.value })
+    if (err) {
+      error.value = err.message
+      saving.value = false
+      return
     }
   }
 
   saving.value = false
-  await loadCategories()
+  emit('saved')
+  emit('update:open', false)
 }
 </script>

@@ -64,7 +64,7 @@ import type { Database } from '~/types/database'
 type CategoryRow = Database['public']['Tables']['categories']['Row']
 
 const supabase = useSupabase()
-const { household, categories, loadHousehold, loadCategories } = useHousehold()
+const { workspace, categories, loadWorkspaces, loadCategories } = useWorkspace()
 
 const activeType = ref<'expense' | 'income'>('expense')
 const dialogOpen = ref(false)
@@ -98,7 +98,7 @@ async function reload() {
 }
 
 onMounted(async () => {
-  await loadHousehold()
-  if (household.value) await loadCategories()
+  await loadWorkspaces()
+  if (workspace.value) await loadCategories()
 })
 </script>

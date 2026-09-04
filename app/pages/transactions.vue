@@ -101,7 +101,7 @@ type TransactionRow = Database['public']['Tables']['transactions']['Row']
 type CategoryRow = Database['public']['Tables']['categories']['Row']
 
 const supabase = useSupabase()
-const { household, categories, loadHousehold, loadCategories } = useHousehold()
+const { workspace, categories, loadWorkspaces, loadCategories } = useWorkspace()
 
 const todayKey = computed(() => monthKey(new Date()))
 const transactions = ref<TransactionRow[]>([])
@@ -146,17 +146,17 @@ function shiftMonth(delta: number) {
 }
 
 async function loadTransactions() {
-  if (!household.value) return
+  if (!workspace.value) return
   const { data } = await supabase
     .from('transactions')
     .select('*')
-    .eq('household_id', household.value.id)
+    .eq('workspace_id', workspace.value.id)
   transactions.value = data ?? []
 }
 
 onMounted(async () => {
-  await loadHousehold()
-  if (household.value) {
+  await loadWorkspaces()
+  if (workspace.value) {
     await loadCategories()
     await loadTransactions()
   }
