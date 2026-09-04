@@ -1,23 +1,18 @@
 import type { User, Session } from '@supabase/supabase-js'
 
+const user = ref<User | null>(null)
+const loading = ref(true)
+
 export function useAuth() {
   const supabase = useSupabase()
 
-  const user = ref<User | null>(null)
-  const loading = ref(true)
-
   async function refresh() {
     const { data } = await supabase.auth.getSession()
-    const session = data.session
-    if (session?.user) {
-      user.value = session.user
-    } else {
-      user.value = null
-    }
+    syncFromSession(data.session)
     return user.value
   }
 
-  async function handleAuthChange(_event: string, session: Session | null) {
+  function syncFromSession(session: Session | null) {
     user.value = session?.user ?? null
   }
 
@@ -39,18 +34,10 @@ export function useAuth() {
 
   async function init() {
     loading.value = true
-    supabase.auth.onAuthStateChange(handleAuthChange)
+    supabase.auth.onAuthStateChange((_e, session) => syncFromSession(session))
     await refresh()
     loading.value = false
   }
 
-  return {
-    user,
-    loading,
-    init,
-    refresh,
-    signIn,
-    signUp,
-    signOut,
-  }
+  return { user, loading, init, refresh, syncFromSession, signIn, signUp, signOut }
 }
