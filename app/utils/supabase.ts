@@ -2,13 +2,12 @@ import { createBrowserClient, createServerClient } from '@supabase/ssr'
 import { parseCookies, setCookie } from 'h3'
 import type { Database } from '~/types/database'
 
-const url = useRuntimeConfig().public.supabaseUrl as string
-const key = useRuntimeConfig().public.supabasePublishableKey as string
-
 export function createSupabaseClient() {
-  const isServer = import.meta.server
+  const config = useRuntimeConfig().public
+  const url = config.supabaseUrl as string
+  const key = config.supabasePublishableKey as string
 
-  if (isServer) {
+  if (import.meta.server) {
     const event = useRequestEvent()
     const client = createServerClient<Database>(url, key, {
       cookies: {
@@ -30,10 +29,6 @@ export function createSupabaseClient() {
         },
       },
     })
-    // Cache the client for the lifetime of this request
-    if (event && !event.context.supabase) {
-      event.context.supabase = client
-    }
     return client
   }
 
