@@ -27,7 +27,5 @@
 <script setup lang="ts">
 import { Moon, Sun } from 'lucide-vue-next'
 
-definePageMeta({ layout: 'auth' })
-
 const { toggleTheme, isDark } = useTheme()
 </script>

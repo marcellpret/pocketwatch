@@ -1,6 +1,9 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr'
 import { parseCookies, setCookie } from 'h3'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '~/types/database'
+
+let browserClient: SupabaseClient<Database> | null = null
 
 export function createSupabaseClient() {
   const config = useRuntimeConfig().public
@@ -9,7 +12,7 @@ export function createSupabaseClient() {
 
   if (import.meta.server) {
     const event = useRequestEvent()
-    const client = createServerClient<Database>(url, key, {
+    return createServerClient<Database>(url, key, {
       cookies: {
         getAll() {
           if (!event) return []
@@ -29,8 +32,10 @@ export function createSupabaseClient() {
         },
       },
     })
-    return client
   }
 
-  return createBrowserClient<Database>(url, key)
+  if (!browserClient) {
+    browserClient = createBrowserClient<Database>(url, key)
+  }
+  return browserClient
 }

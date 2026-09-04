@@ -1,14 +1,18 @@
 import type { User, Session } from '@supabase/supabase-js'
 
-const user = ref<User | null>(null)
-const loading = ref(true)
-
 export function useAuth() {
   const supabase = useSupabase()
+  const user = useState<User | null>('auth-user', () => null)
+  const loading = useState<boolean>('auth-loading', () => true)
 
   async function refresh() {
-    const { data } = await supabase.auth.getSession()
-    syncFromSession(data.session)
+    if (import.meta.server) {
+      const { data, error } = await supabase.auth.getUser()
+      user.value = error ? null : data.user
+    } else {
+      const { data } = await supabase.auth.getSession()
+      user.value = data.session?.user ?? null
+    }
     return user.value
   }
 

@@ -5,13 +5,12 @@ import type {
 type HouseholdRow = Database['public']['Tables']['households']['Row']
 type CategoryRow = Database['public']['Tables']['categories']['Row']
 
-const household = ref<HouseholdRow | null>(null)
-const categories = ref<CategoryRow[]>([])
-const loading = ref(false)
-
 export function useHousehold() {
   const supabase = useSupabase()
   const { user } = useAuth()
+  const household = useState<HouseholdRow | null>('household', () => null)
+  const categories = useState<CategoryRow[]>('household-categories', () => [])
+  const loading = useState<boolean>('household-loading', () => false)
 
   async function loadHousehold(): Promise<HouseholdRow | null> {
     if (!user.value) {
