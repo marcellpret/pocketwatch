@@ -27,13 +27,13 @@
         <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-foreground/50">€</span>
         <input
           id="amount"
-          v-model="form.amount"
-          type="number"
+          :value="form.amount"
+          type="text"
           inputmode="decimal"
-          min="0"
-          step="0.01"
+          autocomplete="off"
           placeholder="0.00"
           class="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-lg font-semibold tabular-nums text-foreground outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30"
+          @input="onAmountInput"
         />
       </div>
     </div>
@@ -89,17 +89,31 @@
       />
     </div>
 
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid gap-3 min-[400px]:grid-cols-2">
       <!-- Date -->
       <div>
         <Label for="date" class="mb-1.5 block text-sm font-medium">Date</Label>
-        <input
-          id="date"
-          v-model="form.occurredOn"
-          type="date"
-          :max="todayISO()"
-          class="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-foreground outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30"
-        />
+        <div
+          class="relative flex w-full items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 outline-none transition focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/30"
+        >
+          <CalendarDays class="h-4 w-4 shrink-0 text-muted-foreground" />
+          <span
+            class="flex-1 text-sm tabular-nums"
+            :class="form.occurredOn ? 'text-foreground' : 'text-muted-foreground'"
+          >
+            {{ form.occurredOn ? formatDate(form.occurredOn) : 'dd.mm.yyyy' }}
+          </span>
+          <ChevronDown class="h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            id="date"
+            v-model="form.occurredOn"
+            type="date"
+            :max="todayISO()"
+            aria-label="Date"
+            class="absolute inset-0 h-full w-full cursor-pointer bg-transparent opacity-0 dark:[color-scheme:dark]"
+            @click="openDatePicker"
+          />
+        </div>
       </div>
 
       <!-- Recurrence -->
@@ -109,12 +123,12 @@
           type="button"
           role="switch"
           :aria-checked="form.frequency === 'monthly'"
-          class="flex w-full items-center justify-between rounded-xl border border-border px-3 py-2.5"
+          class="flex w-full items-center justify-between gap-2 rounded-xl border border-border px-3 py-2.5"
           @click="form.frequency = form.frequency === 'monthly' ? 'one_time' : 'monthly'"
         >
-          <span class="text-sm text-foreground">{{ form.frequency === 'monthly' ? 'Monthly' : 'One-time' }}</span>
+          <span class="min-w-0 flex-1 truncate text-left text-sm text-foreground">{{ form.frequency === 'monthly' ? 'Monthly' : 'One-time' }}</span>
           <span
-            class="relative h-6 w-11 rounded-full transition"
+            class="relative h-6 w-11 shrink-0 rounded-full transition"
             :class="form.frequency === 'monthly' ? 'bg-brand-600' : 'bg-muted'"
           >
             <span
@@ -151,7 +165,7 @@
 </template>
 
 <script setup lang="ts">
-import { Check, ChevronsUpDown } from 'lucide-vue-next'
+import { CalendarDays, Check, ChevronDown, ChevronsUpDown } from 'lucide-vue-next'
 import { Label } from 'reka-ui'
 import {
   SelectRoot as RekaSelect,
@@ -194,6 +208,24 @@ const form = reactive({
 const saving = ref(false)
 const error = ref<string | null>(null)
 
+function openDatePicker(e: Event) {
+  const el = e.currentTarget as HTMLInputElement
+  try {
+    el.showPicker?.()
+  } catch {
+    /* keyboard/interaction edge cases: fall back to native click behaviour */
+  }
+}
+
+function onAmountInput(e: Event) {
+  const el = e.target as HTMLInputElement
+  const next = sanitizeAmountInput(el.value)
+  if (el.value !== next) {
+    el.value = next
+  }
+  form.amount = next
+}
+
 const filteredCategories = computed(() => props.categories.filter((c) => c.type === form.type))
 
 watch(
@@ -221,8 +253,8 @@ if (props.transaction) {
 async function save() {
   error.value = null
 
-  const amount = Number(form.amount)
-  if (!amount || amount <= 0) {
+  const amount = parseAmount(form.amount)
+  if (!Number.isFinite(amount) || amount <= 0) {
     error.value = 'Please enter a valid amount.'
     return
   }

@@ -76,7 +76,15 @@
       <p class="mt-4 text-xs uppercase tracking-wide text-white/70">Balance</p>
       <p class="text-3xl font-bold">{{ formatAmount(balance) }}</p>
 
-      <div class="mt-5 grid grid-cols-2 gap-3">
+      <button
+        class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3.5 text-base font-semibold text-brand-700 shadow-sm transition hover:bg-white/90 active:scale-[0.98]"
+        @click="navigateTo('/add')"
+      >
+        <Plus class="h-5 w-5 stroke-[2.5]" />
+        Add entry
+      </button>
+
+      <div class="mt-4 grid grid-cols-2 gap-3">
         <div class="rounded-xl bg-white/10 p-3">
           <p class="text-xs text-white/70">Income</p>
           <p class="mt-0.5 flex items-center gap-1 font-semibold text-emerald-300">
@@ -123,7 +131,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Plus } from 'lucide-vue-next'
 import type { Database } from '~/types/database'
 
 type TransactionRow = Database['public']['Tables']['transactions']['Row']

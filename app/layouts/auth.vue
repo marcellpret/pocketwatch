@@ -6,8 +6,10 @@
       class="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted"
       @click="toggleTheme"
     >
-      <Sun v-if="isDark" class="h-5 w-5" />
-      <Moon v-else class="h-5 w-5" />
+      <ClientOnly>
+        <Sun v-if="isDark" class="h-5 w-5" />
+        <Moon v-else class="h-5 w-5" />
+      </ClientOnly>
     </button>
 
     <div class="mb-8 flex flex-col items-center gap-2">

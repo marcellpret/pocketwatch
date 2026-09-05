@@ -18,8 +18,10 @@
           class="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted"
           @click="toggleTheme"
         >
-          <Sun v-if="isDark" class="h-5 w-5" />
-          <Moon v-else class="h-5 w-5" />
+          <ClientOnly>
+            <Sun v-if="isDark" class="h-5 w-5" />
+            <Moon v-else class="h-5 w-5" />
+          </ClientOnly>
         </button>
       </div>
     </header>
