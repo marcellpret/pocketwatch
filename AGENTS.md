@@ -41,3 +41,17 @@ Before declaring the task complete:
 7. Confirm every requested requirement has been implemented.
 
 Only declare completion when the implementation is actually complete.
+
+# Versioning & Changelog
+
+Releases follow **Semantic Versioning** (`major.minor.patch`) and are recorded in `CHANGELOG.md` (Keep a Changelog format). The `version` field in `package.json` is the source of truth for the current release.
+
+## Process
+
+1. Work is done on feature branches and merged to `main` only after testing.
+2. Every feature branch adds its own entry under the `## [Unreleased]` section of `CHANGELOG.md`, in the applicable subheading (`Added`, `Changed`, `Fixed`, `Removed`, etc.). Merge the feature to `main`; the entry stays under Unreleased.
+3. When cutting a release:
+   - Create a new dated `## [x.y.z]` section at the top and move the accumulated Unreleased changes into it (replacing Unreleased with a fresh empty section).
+   - Bump `version` in `package.json` to `x.y.z`.
+   - Do not create git tags unless explicitly asked.
+4. Keep entries short, user-facing, and grouped by heading.
