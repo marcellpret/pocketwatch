@@ -102,6 +102,52 @@
 
     <section>
       <div class="mb-2 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-muted-foreground">Budgets this month</h3>
+        <NuxtLink to="/budgets" class="text-sm font-medium text-brand-600 hover:underline">Manage</NuxtLink>
+      </div>
+
+      <div
+        v-if="dashboardBudgetRows.length === 0"
+        class="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
+      >
+        No budgets set yet.
+        <NuxtLink to="/budgets" class="font-medium text-brand-600 hover:underline">Set budgets →</NuxtLink>
+      </div>
+
+      <div v-else class="rounded-2xl border border-border bg-card p-4">
+        <div class="flex items-end justify-between gap-2">
+          <div>
+            <p class="text-xs text-muted-foreground">Spent {{ formatAmount(dashboardTotalSpent) }}</p>
+            <p class="text-lg font-semibold tabular-nums" :class="dashboardRemaining < 0 ? 'text-rose-500' : 'text-foreground'">
+              {{ dashboardRemaining < 0 ? 'Over by ' + formatAmount(Math.abs(dashboardRemaining)) : formatAmount(dashboardRemaining) + ' left' }}
+            </p>
+          </div>
+          <p class="text-xs text-muted-foreground">of {{ formatAmount(dashboardTotalBudget) }}</p>
+        </div>
+
+        <div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+          <div
+            class="h-full rounded-full transition-all"
+            :class="dashboardRemaining < 0 ? 'bg-rose-500' : 'bg-emerald-500'"
+            :style="{ width: `${dashboardPercent}%` }"
+          />
+        </div>
+
+        <div v-if="dashboardBudgetRows.length > 1" class="mt-4 space-y-2.5">
+          <div v-for="row in dashboardBudgetRows.slice(0, 4)" :key="row.categoryId" class="flex items-center gap-2">
+            <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: row.color || '#9ca3af' }" />
+            <span class="min-w-0 flex-1 truncate text-xs">{{ row.name }}</span>
+            <div class="h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-muted">
+              <div class="h-full rounded-full transition-all" :class="row.spent > row.budget ? 'bg-rose-500' : 'bg-emerald-500'" :style="{ width: `${percent(row.spent, row.budget)}%` }" />
+            </div>
+            <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{ formatAmount(row.spent) }} / {{ formatAmount(row.budget) }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="mb-2 flex items-center justify-between">
         <h3 class="text-sm font-semibold text-muted-foreground">Recent activity</h3>
         <NuxtLink to="/transactions" class="text-sm font-medium text-brand-600 hover:underline">
           View all
@@ -139,6 +185,7 @@ type CategoryRow = Database['public']['Tables']['categories']['Row']
 
 const supabase = useSupabase()
 const { workspace, categories, loadWorkspaces, loadCategories } = useWorkspace()
+const { budgets, loadBudgets } = useBudgets()
 const { myPendingInvites, loadMyPendingInvites, accept, decline } = useInvitations()
 
 const loading = ref(true)
@@ -174,6 +221,40 @@ function categoryById(id: string) {
   return categoryMap.value.get(id)
 }
 
+const categoryBudget = computed(() => {
+  const map = new Map<string, number>()
+  for (const c of categories.value) {
+    if (c.type !== 'expense') continue
+    const b = budgets.value.find((x) => x.category_id === c.id)
+    if (b) map.set(c.id, b.amount)
+  }
+  return map
+})
+
+const dashboardBudgetRows = computed(() =>
+  [...categoryBudget.value.entries()].map(([categoryId, budget]) => {
+    const cat = categoryMap.value.get(categoryId)
+    const spent = monthTransactions.value
+      .filter((t) => t.type === 'expense' && t.category_id === categoryId)
+      .reduce((sum, t) => sum + t.amount, 0)
+    return { categoryId, budget, spent, name: cat?.name ?? 'Unknown', color: cat?.color ?? null }
+  }),
+)
+
+const dashboardTotalBudget = computed(() =>
+  dashboardBudgetRows.value.reduce((sum, r) => sum + r.budget, 0),
+)
+const dashboardTotalSpent = computed(() =>
+  dashboardBudgetRows.value.reduce((sum, r) => sum + r.spent, 0),
+)
+const dashboardRemaining = computed(() => dashboardTotalBudget.value - dashboardTotalSpent.value)
+const dashboardPercent = computed(() => percent(dashboardTotalSpent.value, dashboardTotalBudget.value))
+
+function percent(spent: number, budget: number) {
+  if (!budget || budget <= 0) return 0
+  return Math.min(100, Math.round((spent / budget) * 100))
+}
+
 function shiftMonth(delta: number) {
   const key = currentMonth.value
   const y = Number(key.slice(0, 4))
@@ -185,6 +266,7 @@ async function acceptInvite(invite: (typeof myPendingInvites.value)[number]) {
   await accept(invite)
   if (workspace.value) {
     await loadCategories()
+    await loadBudgets()
     await loadTransactions()
   }
 }
@@ -209,6 +291,7 @@ onMounted(async () => {
   await loadWorkspaces()
   if (workspace.value) {
     await loadCategories()
+    await loadBudgets()
     await loadTransactions()
   } else {
     await loadMyPendingInvites()
