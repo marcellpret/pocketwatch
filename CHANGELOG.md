@@ -7,9 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Apple Pay webhook sync: per-workspace webhook token, iPhone Shortcuts automation endpoint, merchant auto-categorization rules.
-
 ## [0.1.0] - 2026-09-05
 
 ### Added
