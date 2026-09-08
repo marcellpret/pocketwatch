@@ -9,46 +9,17 @@
   </div>
 
   <div v-else>
-    <div class="mb-3 flex items-center justify-between">
-      <h1 class="text-xl font-semibold">Budgets</h1>
-      <div class="flex items-center gap-2">
-        <button
-          aria-label="Add budget"
-          :disabled="!canAdd"
-          class="flex items-center gap-1 rounded-full bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
-          @click="openAdd"
-        >
-          <Plus class="h-4 w-4" />
-          <span>Add budget</span>
-        </button>
-        <div class="flex items-center gap-1.5">
-          <button
-            aria-label="Previous month"
-            class="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card transition hover:bg-muted"
-            @click="shiftMonth(-1)"
-          >
-            <ChevronLeft class="h-4 w-4" />
-          </button>
-          <span class="text-sm font-medium">{{ monthLabel(currentMonth) }}</span>
-          <button
-            aria-label="Next month"
-            class="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card transition hover:bg-muted"
-            @click="shiftMonth(1)"
-          >
-            <ChevronRight class="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <section
+    <SummaryCard
       v-if="budgetedRows.length > 0"
-      class="mb-5 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white"
+      class="mb-5"
+      v-model:month="currentMonth"
+      variant="alt"
+      title="Budgeted this month"
+      action-label="Add budget"
+      :action-disabled="!canAdd"
+      @action="openAdd"
     >
-      <p class="text-xs uppercase tracking-wide text-white/70">Budgeted this month</p>
-      <p class="mt-1 text-3xl font-bold">
-        {{ formatAmount(totalBudget) }}
-      </p>
+      <p class="text-3xl font-bold">{{ formatAmount(totalBudget) }}</p>
 
       <div class="mt-4 grid grid-cols-2 gap-3">
         <div class="rounded-xl bg-white/10 p-3">
@@ -72,7 +43,7 @@
           :style="{ width: `${totalPercent}%` }"
         />
       </div>
-    </section>
+    </SummaryCard>
 
     <div
       v-if="expenseCategories.length === 0"
@@ -137,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, TrendingDown, Wallet, Pencil, AlertTriangle, Plus } from 'lucide-vue-next'
+import { TrendingDown, Wallet, Pencil, AlertTriangle } from 'lucide-vue-next'
 import type { Database } from '~/types/database'
 
 type TransactionRow = Database['public']['Tables']['transactions']['Row']
@@ -195,13 +166,6 @@ const totalPercent = computed(() => percent(totalSpent.value, totalBudget.value)
 function percent(spent: number, budget: number) {
   if (!budget || budget <= 0) return 0
   return Math.min(100, Math.round((spent / budget) * 100))
-}
-
-function shiftMonth(delta: number) {
-  const key = currentMonth.value
-  const y = Number(key.slice(0, 4))
-  const m = Number(key.slice(5, 7))
-  currentMonth.value = monthKey(new Date(y, m - 1 + delta, 1))
 }
 
 function openEdit(category: CategoryRow) {

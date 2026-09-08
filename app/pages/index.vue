@@ -45,44 +45,13 @@
   </div>
 
   <div v-else class="space-y-5">
-    <section class="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-1.5">
-          <button
-            aria-label="Previous month"
-            class="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
-            @click="shiftMonth(-1)"
-          >
-            <ChevronLeft class="h-5 w-5" />
-          </button>
-          <span class="text-sm font-medium">{{ monthLabel(currentMonth) }}</span>
-          <button
-            aria-label="Next month"
-            class="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
-            @click="shiftMonth(1)"
-          >
-            <ChevronRight class="h-5 w-5" />
-          </button>
-        </div>
-        <button
-          v-if="currentMonth !== todayKey"
-          class="text-xs font-medium underline-offset-2 hover:underline"
-          @click="currentMonth = todayKey"
-        >
-          Today
-        </button>
-      </div>
-
-      <p class="mt-4 text-xs uppercase tracking-wide text-white/70">Balance</p>
+    <SummaryCard
+      v-model:month="currentMonth"
+      title="Balance"
+      action-label="Add entry"
+      @action="navigateTo('/add')"
+    >
       <p class="text-3xl font-bold">{{ formatAmount(balance) }}</p>
-
-      <button
-        class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3.5 text-base font-semibold text-brand-700 shadow-sm transition hover:bg-white/90 active:scale-[0.98]"
-        @click="navigateTo('/add')"
-      >
-        <Plus class="h-5 w-5 stroke-[2.5]" />
-        Add entry
-      </button>
 
       <div class="mt-4 grid grid-cols-2 gap-3">
         <div class="rounded-xl bg-white/10 p-3">
@@ -98,12 +67,12 @@
           </p>
         </div>
       </div>
-    </section>
+    </SummaryCard>
 
     <section>
       <div class="mb-2 flex items-center justify-between">
         <h3 class="text-sm font-semibold text-muted-foreground">Budgets this month</h3>
-        <NuxtLink to="/budgets" class="text-sm font-medium text-brand-600 hover:underline">Manage</NuxtLink>
+        <NuxtLink to="/budgets" class="text-sm font-medium text-slate-500 hover:underline">Manage</NuxtLink>
       </div>
 
       <div
@@ -111,38 +80,33 @@
         class="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground"
       >
         No budgets set yet.
-        <NuxtLink to="/budgets" class="font-medium text-brand-600 hover:underline">Set budgets →</NuxtLink>
+        <NuxtLink to="/budgets" class="font-medium text-slate-500 hover:underline">Set budgets →</NuxtLink>
       </div>
 
       <div v-else class="rounded-2xl border border-border bg-card p-4">
-        <div class="flex items-end justify-between gap-2">
-          <div>
-            <p class="text-xs text-muted-foreground">Spent {{ formatAmount(dashboardTotalSpent) }}</p>
-            <p class="text-lg font-semibold tabular-nums" :class="dashboardRemaining < 0 ? 'text-rose-500' : 'text-foreground'">
-              {{ dashboardRemaining < 0 ? 'Over by ' + formatAmount(Math.abs(dashboardRemaining)) : formatAmount(dashboardRemaining) + ' left' }}
-            </p>
-          </div>
-          <p class="text-xs text-muted-foreground">of {{ formatAmount(dashboardTotalBudget) }}</p>
-        </div>
-
-        <div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            class="h-full rounded-full transition-all"
-            :class="dashboardRemaining < 0 ? 'bg-rose-500' : 'bg-emerald-500'"
-            :style="{ width: `${dashboardPercent}%` }"
-          />
-        </div>
-
-        <div v-if="dashboardBudgetRows.length > 1" class="mt-4 space-y-2.5">
+        <div class="space-y-3">
           <div v-for="row in dashboardBudgetRows.slice(0, 4)" :key="row.categoryId" class="flex items-center gap-2">
             <span class="h-2.5 w-2.5 shrink-0 rounded-full" :style="{ backgroundColor: row.color || '#9ca3af' }" />
-            <span class="min-w-0 flex-1 truncate text-xs">{{ row.name }}</span>
+            <span class="min-w-0 flex-1 truncate text-sm">{{ row.name }}</span>
             <div class="h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-muted">
-              <div class="h-full rounded-full transition-all" :class="row.spent > row.budget ? 'bg-rose-500' : 'bg-emerald-500'" :style="{ width: `${percent(row.spent, row.budget)}%` }" />
+              <div
+                class="h-full rounded-full transition-all"
+                :class="row.spent > row.budget ? 'bg-rose-500' : 'bg-slate-400'"
+                :style="{ width: `${percent(row.spent, row.budget)}%` }"
+              />
             </div>
-            <span class="shrink-0 text-xs tabular-nums text-muted-foreground">{{ formatAmount(row.spent) }} / {{ formatAmount(row.budget) }}</span>
+            <span class="shrink-0 text-xs tabular-nums text-muted-foreground">
+              {{ formatAmount(row.spent) }} / {{ formatAmount(row.budget) }}
+            </span>
           </div>
         </div>
+
+        <p class="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
+          Spent {{ formatAmount(dashboardTotalSpent) }} of {{ formatAmount(dashboardTotalBudget) }}
+          <span :class="dashboardRemaining < 0 ? 'font-semibold text-rose-500' : 'font-semibold text-slate-600'">
+            · {{ dashboardRemaining < 0 ? `Over by ${formatAmount(Math.abs(dashboardRemaining))}` : `${formatAmount(dashboardRemaining)} left` }}
+          </span>
+        </p>
       </div>
     </section>
 
@@ -177,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Plus } from 'lucide-vue-next'
+import { TrendingUp, TrendingDown } from 'lucide-vue-next'
 import type { Database } from '~/types/database'
 
 type TransactionRow = Database['public']['Tables']['transactions']['Row']
@@ -248,18 +212,10 @@ const dashboardTotalSpent = computed(() =>
   dashboardBudgetRows.value.reduce((sum, r) => sum + r.spent, 0),
 )
 const dashboardRemaining = computed(() => dashboardTotalBudget.value - dashboardTotalSpent.value)
-const dashboardPercent = computed(() => percent(dashboardTotalSpent.value, dashboardTotalBudget.value))
 
 function percent(spent: number, budget: number) {
   if (!budget || budget <= 0) return 0
   return Math.min(100, Math.round((spent / budget) * 100))
-}
-
-function shiftMonth(delta: number) {
-  const key = currentMonth.value
-  const y = Number(key.slice(0, 4))
-  const m = Number(key.slice(5, 7))
-  currentMonth.value = monthKey(new Date(y, m - 1 + delta, 1))
 }
 
 async function acceptInvite(invite: (typeof myPendingInvites.value)[number]) {
