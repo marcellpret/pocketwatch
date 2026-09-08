@@ -152,7 +152,11 @@
           {{ membersCount }} member{{ membersCount === 1 ? '' : 's' }} in this workspace.
         </p>
       </section>
+
+      <AutoCategorization />
     </template>
+
+    <ApplePaySync />
 
     <section class="rounded-2xl border border-border bg-card p-5">
       <h2 class="mb-3 font-semibold">Preferences</h2>

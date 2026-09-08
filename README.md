@@ -12,6 +12,7 @@ Built with **Nuxt 4**, **Vue 3**, **Tailwind CSS v4** and **Supabase** (Postgres
 - **Transactions** — log expenses and income with an amount, category, date and optional note. Filter by **type**, **category** and **month**, or flag a recurring monthly transaction.
 - **Categories** — every workspace starts with 13 sensible defaults (seeded automatically). Add, rename or delete your own — each workspace keeps its own set.
 - **Settings** — manage workspaces (create / edit / delete), members, invitations and preferences from one place.
+- **Apple Pay sync** — generate a per-workspace webhook token, then have an iPhone Shortcuts *Transaction* automation post each tap-to-pay purchase as an expense. Auto-categorize by merchant with user-defined rules; unmatched purchases fall back to the "Other"-type expense category.
 - **Auth** — email/password sign-up and sign-in backed by Supabase Auth with SSR session handling.
 - **Theming** — light & dark mode with a manual toggle.
 
@@ -60,13 +61,15 @@ supabase link --project-ref <project-ref>
 supabase db push
 ```
 
-It creates five tables under RLS:
+It creates seven tables under RLS:
 
 - `workspaces` — the budgets (owner, name, optional description, join code)
 - `workspace_members` — who belongs to which workspace
 - `workspace_invitations` — pending / accepted / declined invites
 - `categories` — per-workspace expense & income categories
 - `transactions` — the money movements, linked to a workspace and a category
+- `merchant_rules` — merchant-name → category rules for Apple Pay auto-categorization
+- `webhook_tokens` — per-workspace hashed tokens used by the Apple Pay webhook
 
 A trigger seeds each new workspace with 13 default categories; a `postgres`-owned helper function (`private.user_workspace_ids()`) breaks RLS recursion so members can read only what they belong to, and workspace edits/deletes are restricted to owners.
 
@@ -84,11 +87,14 @@ pnpm preview    # preview the production build locally
 ```
 app/
   components/     # UI components (dialogs, switcher, forms)
-  composables/    # shared state & logic (auth, workspace, invitations, theme)
+  composables/    # shared state & logic (auth, workspace, invitations, apple pay, theme)
   layouts/        # auth + default (app shell) layouts
   pages/          # index, add, transactions, categories, settings, login, register
   types/          # generated Supabase database types
   utils/          # supabase client factory & helpers
+server/
+  routes/         # API endpoints (Apple Pay webhook)
+  utils/          # server-side supabase client & webhook helpers
 ```
 
 ## License
