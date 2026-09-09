@@ -1,5 +1,26 @@
 <template>
   <div class="space-y-5">
+    <!-- Apple Pay review -->
+    <div
+      v-if="isReviewable"
+      class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4"
+    >
+      <div class="mb-1.5 flex items-center gap-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
+        <Sparkles class="h-4 w-4" />
+        This purchase wasn't auto-categorized
+      </div>
+      <p class="mb-3 text-xs text-amber-600/80 dark:text-amber-400/80">
+        Pick a category below. Optionally remember this merchant so future Apple Pay purchases are categorized automatically.
+      </p>
+      <label class="flex cursor-pointer items-start gap-2 text-xs text-foreground">
+        <input v-model="setRule" type="checkbox" class="mt-0.5 h-4 w-4 accent-amber-600" :disabled="!form.description.trim()" />
+        <span>
+          Remember <b>"{{ form.description.trim() }}"</b> → {{ selectedCategoryName }}
+          <span v-if="!form.description.trim()" class="text-muted-foreground">(add a merchant name first)</span>
+        </span>
+      </label>
+    </div>
+
     <!-- Type toggle -->
     <div class="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
       <button
@@ -165,7 +186,7 @@
 </template>
 
 <script setup lang="ts">
-import { CalendarDays, Check, ChevronDown, ChevronsUpDown } from 'lucide-vue-next'
+import { CalendarDays, Check, ChevronDown, ChevronsUpDown, Sparkles } from 'lucide-vue-next'
 import { Label } from 'reka-ui'
 import {
   SelectRoot as RekaSelect,
@@ -193,8 +214,17 @@ const emit = defineEmits<{
 const supabase = useSupabase()
 const { workspace } = useWorkspace()
 const { user } = useAuth()
+const { createRule } = useApplePay()
 
 const isEditing = computed(() => !!props.transaction)
+const isReviewable = computed(
+  () => isEditing.value && props.transaction?.source === 'apple_pay' && !!props.transaction.needs_review,
+)
+const setRule = ref(true)
+
+const selectedCategoryName = computed(
+  () => props.categories.find((c) => c.id === form.categoryId)?.name ?? '',
+)
 
 const form = reactive({
   type: 'expense' as 'expense' | 'income',
@@ -283,9 +313,21 @@ async function save() {
   }
 
   if (isEditing.value && props.transaction) {
-    const { error: err } = await supabase.from('transactions').update(payload).eq('id', props.transaction.id)
-    if (err) error.value = err.message
-    else emit('saved')
+    const payloadWithReview = {
+      ...payload,
+      needs_review: false,
+    }
+    const { error: err } = await supabase.from('transactions').update(payloadWithReview).eq('id', props.transaction.id)
+    if (err) {
+      error.value = err.message
+      saving.value = false
+      return
+    }
+    if (setRule.value && form.description.trim()) {
+      const { error: ruleErr } = await createRule(form.description.trim(), form.categoryId)
+      if (ruleErr) error.value = ruleErr.message
+    }
+    emit('saved')
   } else {
     const { error: err } = await supabase.from('transactions').insert({
       ...payload,
