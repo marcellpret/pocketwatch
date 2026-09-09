@@ -51,8 +51,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  console.log('[Receipt] token:', token.slice(0, 8) + '...', { amount, merchant, occurredOn })
-
   const supabase = createServerSupabase()
   const rpcParams: Record<string, unknown> = {
     p_token: token,
@@ -62,7 +60,11 @@ export default defineEventHandler(async (event) => {
   if (merchant) rpcParams.p_merchant = merchant
   if (occurredOn) rpcParams.p_occurred_on = occurredOn
 
+  console.log('[Receipt] rpcParams:', JSON.stringify(rpcParams, (k, v) => k === 'p_token' ? v.slice(0, 8) + '...' : v))
+
   const { data, error } = await supabase.rpc('webhook_insert_transaction', rpcParams as any)
+
+  if (data) console.log('[Receipt] saved transaction occurred_on:', data.occurred_on)
 
   if (error) {
     const message = error.message ?? ''

@@ -182,6 +182,15 @@
         {{ saving ? 'Saving…' : isEditing ? 'Save changes' : 'Add' }}
       </button>
     </div>
+
+    <button
+      v-if="isEditing"
+      type="button"
+      class="w-full rounded-xl border border-red-200 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+      @click="$emit('delete')"
+    >
+      Delete transaction
+    </button>
   </div>
 </template>
 
@@ -209,6 +218,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   saved: []
   cancel: []
+  delete: []
 }>()
 
 const supabase = useSupabase()

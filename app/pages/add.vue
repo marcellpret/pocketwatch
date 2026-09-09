@@ -17,6 +17,7 @@
         :categories="categories"
         @saved="onSaved"
         @cancel="onCancel"
+        @delete="onDelete"
       />
     </div>
   </div>
@@ -59,5 +60,12 @@ function onSaved() {
 
 function onCancel() {
   navigateTo('/transactions')
+}
+
+async function onDelete() {
+  if (!editingTransaction.value) return
+  if (!confirm('Delete this transaction?')) return
+  const { error } = await supabase.from('transactions').delete().eq('id', editingTransaction.value.id)
+  if (!error) navigateTo('/transactions')
 }
 </script>
