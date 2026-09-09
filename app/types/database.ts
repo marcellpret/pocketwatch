@@ -361,6 +361,7 @@ export type Database = {
           p_external_ref?: string
           p_merchant?: string
           p_occurred_on?: string
+          p_source?: string
           p_token: string
         }
         Returns: {
