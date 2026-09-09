@@ -28,6 +28,15 @@ export function monthLabel(key: string): string {
   return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 }
 
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+export function monthLabelShort(key: string): string {
+  const [year, month] = key.split('-').map(Number)
+  const y = year ?? new Date().getFullYear()
+  const m = month ?? 1
+  return `${MONTHS_SHORT[m - 1] ?? ''} ${String(y).slice(2)}`
+}
+
 export function formatDate(iso: string): string {
   const parts = iso.split('T')[0]?.split('-')
   if (parts && parts.length === 3) {

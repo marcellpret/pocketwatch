@@ -33,7 +33,7 @@
     <nav
       class="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card pb-[env(safe-area-inset-bottom)]"
     >
-      <div class="mx-auto grid w-full max-w-md grid-cols-4">
+      <div class="mx-auto grid w-full max-w-md grid-cols-5">
         <NuxtLink
           v-for="item in navItems"
           :key="item.to"
@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { Home, List, PlusCircle, Settings } from 'lucide-vue-next'
+import { Home, List, PlusCircle, Settings, Wallet } from 'lucide-vue-next'
 import { Moon, Sun } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -61,6 +61,7 @@ const navItems = [
   { label: 'Home', to: '/', icon: Home },
   { label: 'Activity', to: '/transactions', icon: List },
   { label: 'Add', to: '/add', icon: PlusCircle },
+  { label: 'Budget', to: '/budgets', icon: Wallet },
   { label: 'More', to: '/settings', icon: Settings },
 ]
 

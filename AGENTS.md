@@ -55,3 +55,30 @@ Releases follow **Semantic Versioning** (`major.minor.patch`) and are recorded i
    - Bump `version` in `package.json` to `x.y.z`.
    - Do not create git tags unless explicitly asked.
 4. Keep entries short, user-facing, and grouped by heading.
+
+# Budgets (feat/budgets)
+
+Recurring monthly budgets are tracked per expense category:
+
+- Table `budgets` (Supabase cloud): `id`, `workspace_id` FK → workspaces (cascade), `category_id` FK → categories (cascade), `amount numeric > 0`, timestamps, `UNIQUE (workspace_id, category_id)`. RLS = "members ... workspace budgets" read/insert/update/delete via the standard `workspace_members` EXISTS pattern. Type registered in `app/types/database.ts`.
+- `useBudgets()` composable (`app/composables/useBudgets.ts`): `budgets` state, `loadBudgets`, `upsertBudget(categoryId, amount)` (upsert on `workspace_id,category_id` conflict), `removeBudget(categoryId)`, `budgetFor`.
+- `BudgetDialog` component edits a category's monthly budget amount (one recurring value per category).
+- `SummaryCard` is the shared "big colorful card" component (used by the Balance card and the `/budgets` totals card). Props: `title`, `variant` (`brand` gradient = main page, `alt` slate gradient = budgets page), `monthControl` (compact abbreviated month label via `monthLabelShort` + prev/next/Today, `defineModel('month')`), `actionLabel`/`actionDisabled` (full-width action button rendered as the last element).
+- `/budgets` page: no outer page title; `SummaryCard` (variant `alt`, month control + "Add budget" action) with budgeted/spent/left totals and progress, then "X of Y categories budgeted" and per-category rows vs current-month expense spending. The card is always rendered so the "Add budget" action stays reachable: its content slot shows the totals/progress when budgets exist, a "No budgets yet" message when no category is budgeted, or an "Add some" link to `/categories` when there are no expense categories.
+- Dashboard (`app/pages/index.vue`) shows a subtle "Budgets this month" section styled like Recent activity (plain bordered `bg-card`, slate accents matching the budget view — not a `SummaryCard`). Per-category progress is the focus; the spent/of/left totals are a small footnote. "Manage" link in the section header.
+- Bottom nav in `app/layouts/default.vue` is now 5 columns (Home, Activity, Add, Budget, More).
+
+Spent per category = sum of expense transactions whose `occurred_on` falls in the viewed month, consistent with the dashboard and Activity views.
+
+# Test accounts
+
+Dev/test accounts created directly in the Supabase auth tables (via SQL, no email confirmation flow). Reusable for manual E2E testing in the browser and the Supabase SQL editor.
+
+- Email: `test@pocketwatch.dev`
+- Password: `test-password-123`
+- ID: `49f6fa5a-1c93-4196-9241-5156f092ad89` (confirmed, identity present)
+
+Gotchas when creating more manually in `auth`:
+- `confirmed_at` and `auth.identities.email` are **generated columns** — do not insert them.
+- The `auth.users` email unique index is partial: `users_email_partial_key ... WHERE (is_sso_user = false)`, so `ON CONFLICT (email)` needs that predicate.
+- GoTrue expects token/string columns (`confirmation_token`, `recovery_token`, `email_change`, `email_change_token_new`, `email_change_token_current`, `reauthentication_token`, `phone_change`, `phone_change_token`) to be non-NULL (empty string) or sign-in fails with `500: Database error querying schema`.
