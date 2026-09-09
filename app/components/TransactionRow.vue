@@ -1,7 +1,12 @@
 <template>
   <button
     type="button"
-    class="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-3 text-left transition hover:bg-muted/60"
+    class="flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition"
+    :class="
+      needsReview
+        ? 'border-amber-500/40 bg-amber-500/5 hover:bg-amber-500/10'
+        : 'border-border bg-card hover:bg-muted/60'
+    "
     @click="$emit('click', transaction)"
   >
     <span
@@ -18,6 +23,13 @@
       <p class="truncate text-xs text-muted-foreground">
         {{ categoryName }}<span v-if="categoryName && isFixed"> · </span>
         <span v-if="isFixed" class="font-medium text-muted-foreground">recurring</span>
+        <span
+          v-if="needsReview"
+          class="ml-1 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400"
+        >
+          <Sparkles class="h-3 w-3" />
+          Needs review
+        </span>
       </p>
     </div>
 
@@ -36,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowDownLeft, ArrowUpRight } from 'lucide-vue-next'
+import { ArrowDownLeft, ArrowUpRight, Sparkles } from 'lucide-vue-next'
 import type { TransactionRow } from '~/types/transactions'
 
 const props = defineProps<{
@@ -49,5 +61,6 @@ defineEmits<{ click: [t: TransactionRow] }>()
 
 const isIncome = computed(() => props.transaction.type === 'income')
 const isFixed = computed(() => props.transaction.frequency === 'monthly')
+const needsReview = computed(() => !!props.transaction.needs_review)
 const catColor = computed(() => props.categoryColor || '#6b7280')
 </script>

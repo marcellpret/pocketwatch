@@ -115,14 +115,14 @@ Tables (in `app/types/database.ts`, `Database['public']['Tables']`):
 - `workspace_invitations` — `id`, `workspace_id`, `email`, `invited_by`, `status` (pending/accepted/declined), `created_at`
 - `categories` — `id`, `workspace_id`, `name`, `type` ('expense'|'income'), `color`, `created_at`
 - `budgets` — `id`, `workspace_id` FK → workspaces (cascade), `category_id` FK → categories (cascade), `amount numeric > 0`, timestamps, `UNIQUE (workspace_id, category_id)`; one recurring monthly budget per expense category
-- `transactions` — `id`, `workspace_id`, `user_id`, `category_id`, `type` ('expense'|'income'), `amount` (number), `currency`, `frequency`, `occurred_on` (date), `description`, `external_ref` (nullable, unique), `source` (nullable; `'apple_pay'` for webhook rows), timestamps
+- `transactions` — `id`, `workspace_id`, `user_id`, `category_id`, `type` ('expense'|'income'), `amount` (number), `currency`, `frequency`, `occurred_on` (date), `description`, `external_ref` (nullable, unique), `source` (nullable; `'apple_pay'` for webhook rows), `needs_review` (bool, default false; set true when a webhook row had no matching merchant rule), timestamps
 - `merchant_rules` — `id`, `workspace_id`, `match` (case-insensitive substring), `category_id`, `created_at`; for auto-categorizing Apple Pay webhook purchases
 - `webhook_tokens` — `id`, `token_hash` (sha256 hex), `user_id`, `workspace_id`, `currency` (default 'EUR'), `last_used_at`, `revoked_at`, `created_at`; raw token is generated client-side and shown once, only the hash is stored
 
 Functions (in `Database['public']['Functions']`):
 - `accept_invitation(p_invite_id)`
 - `delete_workspace(p_workspace_id)`
-- `webhook_insert_transaction(p_token, p_amount, p_merchant, p_occurred_on, p_currency, p_external_ref)` — SECURITY DEFINER public RPC used by the Apple Pay webhook; validates token (error `INVALID_TOKEN`), amount>0 (`INVALID_AMOUNT`), no expense category found (`NO_CATEGORY`); idempotent on `external_ref`, dedups on (workspace, amount, date, merchant); matches merchant_rules; inserts `source='apple_pay'`, `frequency='one_time'`; execute granted to `anon` only (flagged `anon_security_definer_function_executable`, intentional)
+- `webhook_insert_transaction(p_token, p_amount, p_merchant, p_occurred_on, p_currency, p_external_ref)` — SECURITY DEFINER public RPC used by the Apple Pay webhook; validates token (error `INVALID_TOKEN`), amount>0 (`INVALID_AMOUNT`), no expense category found (`NO_CATEGORY`); idempotent on `external_ref`, dedups on (workspace, amount, date, merchant); matches merchant_rules and sets `needs_review = NOT matched`; inserts `source='apple_pay'`, `frequency='one_time'`; execute granted to `anon` only (flagged `anon_security_definer_function_executable`, intentional)
 
 Notable DB mechanics:
 - A trigger seeds each new workspace with 13 default categories.
