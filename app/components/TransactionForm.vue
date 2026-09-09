@@ -218,7 +218,7 @@ const { createRule } = useApplePay()
 
 const isEditing = computed(() => !!props.transaction)
 const isReviewable = computed(
-  () => isEditing.value && props.transaction?.source === 'apple_pay' && !!props.transaction.needs_review,
+  () => isEditing.value && (props.transaction?.source === 'apple_pay' || props.transaction?.source === 'receipt') && !!props.transaction.needs_review,
 )
 const setRule = ref(true)
 

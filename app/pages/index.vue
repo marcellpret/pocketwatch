@@ -134,6 +134,7 @@
           :category-name="categoryById(t.category_id)?.name"
           :category-color="categoryById(t.category_id)?.color"
           @click="navigateTo({ path: '/add', query: { edit: t.id } })"
+          @delete="deleteTransaction"
         />
       </div>
     </section>
@@ -240,6 +241,14 @@ async function loadTransactions() {
     .select('*')
     .eq('workspace_id', workspace.value.id)
   transactions.value = data ?? []
+}
+
+async function deleteTransaction(t: TransactionRow) {
+  if (!confirm(`Delete "${t.description || 'this transaction'}"?`)) return
+  const { error } = await supabase.from('transactions').delete().eq('id', t.id)
+  if (!error) {
+    transactions.value = transactions.value.filter((x) => x.id !== t.id)
+  }
 }
 
 onMounted(async () => {
