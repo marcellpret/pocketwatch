@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-09
+
+### Added
+- Recurring monthly budgets per expense category, with an "Add budget" picker that lists only unbudgeted categories.
+- Budget page showing budgeted / spent / left totals plus per-category progress vs current-month spending.
+- Dashboard "Budgets this month" section emphasizing per-category progress.
+- 5-slot bottom navigation with a dedicated Budget tab.
+- Shared `SummaryCard` component (used by the Balance and budget summary cards) with a compact month selector and an action button.
+
 ## [0.1.0] - 2026-09-05
 
 ### Added
