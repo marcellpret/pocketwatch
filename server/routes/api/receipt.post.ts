@@ -60,6 +60,7 @@ export default defineEventHandler(async (event) => {
   if (merchant) rpcParams.p_merchant = merchant
   if (occurredOn) rpcParams.p_occurred_on = occurredOn
 
+  console.log('[Receipt] received payload:', JSON.stringify(body))
   console.log('[Receipt] rpcParams:', JSON.stringify(rpcParams, (k, v) => k === 'p_token' ? v.slice(0, 8) + '...' : v))
 
   const { data, error } = await supabase.rpc('webhook_insert_transaction', rpcParams as any)
