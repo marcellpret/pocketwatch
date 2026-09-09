@@ -91,48 +91,6 @@ export type Database = {
           },
         ]
       }
-budgets: {
-        Row: {
-          amount: number
-          category_id: string
-          created_at: string
-          id: string
-          updated_at: string
-          workspace_id: string
-        }
-        Insert: {
-          amount: number
-          category_id: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          workspace_id: string
-        }
-        Update: {
-          amount?: number
-          category_id?: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          workspace_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "budgets_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "budgets_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       merchant_rules: {
         Row: {
           category_id: string
